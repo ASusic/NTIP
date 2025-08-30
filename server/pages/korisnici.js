@@ -1,63 +1,78 @@
-const db = require('../db/eventim');  // Veza na bazu
+const sqlite3 = require('sqlite3').verbose();
+const db = require('../db/bob.js');
 
 class Korisnici {
-
   static getAll(callback) {
-    db.all('SELECT * FROM Korisnici', callback);
+    db.all('SELECT id, ime, prezime, email, telefon, adresa, tip_korisnika, naziv_firme, pib, datum_registracije FROM Korisnici', [], (err, rows) => {
+      callback(err, rows);
+    });
   }
 
   static getById(id, callback) {
-    db.get('SELECT * FROM Korisnici WHERE ID = ?', [id], callback);
-  }
-
-  static add(email, sifra, username, uloga, callback) {
-    const query = 'INSERT INTO Korisnici (email, sifra, username, uloga) VALUES (?, ?, ?, ?)';
-    db.run(query, [email, sifra, username, uloga], function (err) {
-      callback(err, this.lastID);
+    db.get('SELECT id, ime, prezime, email, telefon, adresa, tip_korisnika, naziv_firme, pib, datum_registracije FROM Korisnici WHERE id = ?', [id], (err, row) => {
+      callback(err, row);
     });
   }
 
-  static updateById(email, sifra, username, uloga, callback) {
-    const query = 'UPDATE Korisnici SET email = ?, sifra = ?, username = ?, uloga= ?';
-    db.run(query, [email, sifra, username, uloga], function (err) {
-      callback(err, this.changes);
+  static getByEmail(email, callback) {
+    db.get('SELECT * FROM Korisnici WHERE email = ?', [email], (err, row) => {
+      callback(err, row);
     });
   }
 
-  static deleteById(id, callback) {
-    const query = 'DELETE FROM Korisnici WHERE ID = ?';
-    db.run(query, [id], function (err) {
-      callback(err, this.changes);
-    });
+  static create(korisnik, callback) {
+    const { ime, prezime, email, lozinka_hash, telefon, adresa, tip_korisnika, naziv_firme, pib } = korisnik;
+    db.run(
+      `INSERT INTO Korisnici (ime, prezime, email, lozinka_hash, telefon, adresa, tip_korisnika, naziv_firme, pib) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [ime, prezime, email, lozinka_hash, telefon, adresa, tip_korisnika, naziv_firme, pib],
+      function (err) {
+        callback(err, { id: this.lastID });
+      }
+    );
   }
 
-  // Funkcija za login bez bcrypt
+  static update(id, korisnik, callback) {
+    const { ime, prezime, email, lozinka_hash, telefon, adresa, tip_korisnika, naziv_firme, pib } = korisnik;
+    db.run(
+      `UPDATE Korisnici SET ime = ?, prezime = ?, email = ?, lozinka_hash = ?, telefon = ?, adresa = ?, tip_korisnika = ?, naziv_firme = ?, pib = ? WHERE id = ?`,
+      [ime, prezime, email, lozinka_hash, telefon, adresa, tip_korisnika, naziv_firme, pib, id],
+      function (err) {
+        callback(err, { changes: this.changes });
+      }
+    );
+  }
+
+  static delete(id, callback) {
+    db.run('DELETE FROM Korisnici WHERE id = ?', [id], function (err) {
+      callback(err, { changes: this.changes });
+    });
+  }
   static login(email, sifra, callback) {
-    const query = 'SELECT * FROM Korisnici WHERE email = ?';
-    db.get(query, [email], (err, user) => {
-      if (err) {
-        return callback(err, null);
-      }
-      if (!user) {
-        return callback(null, null); // Korisnik ne postoji
-      }
-  
-      // Provjera lozinke (bez hashiranja, samo za testiranje)
-      if (user.sifra === sifra) {
-        // Vraćamo KOMPLETNE podatke o korisniku
-        callback(null, {
-          id: user.id,          // Ovo je ključno - ID iz baze
-          email: user.email,
-          username: user.username,
-          uloga: user.uloga
-        });
-      } else {
-        callback(null, null); // Pogrešna lozinka
-      }
-    });
-  }
-  
-  
+  const query = 'SELECT * FROM Korisnici WHERE email = ?';
+  db.get(query, [email], (err, user) => {
+    if (err) {
+      return callback(err, null);
+    }
+    if (!user) {
+      return callback(null, null);
+    }
+    if (user.lozinka_hash === sifra) {
+      callback(null, {
+        id: user.id,
+        ime: user.ime,
+        prezime: user.prezime,
+        email: user.email,
+        telefon: user.telefon,
+        adresa: user.adresa,
+        tip_korisnika: user.tip_korisnika,
+        naziv_firme: user.naziv_firme,
+        pib: user.pib,
+        datum_registracije: user.datum_registracije
+      });
+    } else {
+      callback(null, null); 
+    }
+  });
 }
-
+}
 module.exports = Korisnici;

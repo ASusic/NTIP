@@ -1,7 +1,6 @@
-const db = require('../db/eventim'); 
+const db = require('../db/bob.js');
 
 class Kategorije {
-
   // Dohvati sve kategorije
   static getAll(callback) {
     db.all('SELECT * FROM Kategorije', callback);
@@ -13,25 +12,24 @@ class Kategorije {
   }
 
   // Dodaj novu kategoriju
-  static add(vrsta, event_id, callback) {
-    const query = 'INSERT INTO Kategorije (vrsta, event_id) VALUES (?, ?)';
-    db.run(query, [vrsta, event_id], function (err) {
+  static add(naziv, opis, callback) {
+    const q = 'INSERT INTO Kategorije (naziv, opis) VALUES (?, ?)';
+    db.run(q, [naziv, opis], function (err) {
       callback(err, this.lastID);
     });
   }
 
   // Ažuriraj kategoriju po ID-u
-  static updateById(id, vrsta, event_id, callback) {
-    const query = 'UPDATE Kategorije SET vrsta = ?, event_id = ? WHERE id = ?';
-    db.run(query, [vrsta, event_id, id], function (err) {
+  static updateById(id, naziv, opis, callback) {
+    const q = 'UPDATE Kategorije SET naziv = ?, opis = ? WHERE id = ?';
+    db.run(q, [naziv, opis, id], function (err) {
       callback(err, this.changes);
     });
   }
 
   // Obriši kategoriju po ID-u
   static deleteById(id, callback) {
-    const query = 'DELETE FROM Kategorije WHERE id = ?';
-    db.run(query, [id], function (err) {
+    db.run('DELETE FROM Kategorije WHERE id = ?', [id], function (err) {
       callback(err, this.changes);
     });
   }
